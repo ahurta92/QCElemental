@@ -86,7 +86,6 @@ def to_string(
         "terachem": "Bohr",
         "turbomole": "Bohr",
         "madness": "Bohr",  # madness by default reads au and optionally can read angs/angstrom
-        "mrchem": "Bohr",  # MRChem by default reads au and optionally can read angs/angstrom
     }
     if dtype not in default_units:
         raise KeyError(f"dtype '{dtype}' not understood.")
@@ -246,6 +245,29 @@ def to_string(
             data.keywords["scf__nopen"] = molrec["molecular_multiplicity"] - 1
             data.keywords["dft__mult"] = molrec["molecular_multiplicity"]
             data.keywords["mcscf__multiplicity"] = molrec["molecular_multiplicity"]
+
+    elif dtype == "madness":
+
+        atom_format = "{elem}"
+        ghost_format = "GH"
+        # TODO handle which units valid
+        umap = {"bohr": "au", "angstrom": "angstrom"}
+
+        atoms = _atoms_formatter(molrec, geom, atom_format, ghost_format, width, prec, 2)
+
+        first_line = f"""geometry"""
+        second_line = f"""units {umap.get(units.lower())}"""
+        last_line = """end"""
+        # noautosym nocenter  # no reorienting input geometry
+        smol = [first_line]
+        smol.append(second_line)
+        smol.extend(atoms)
+        smol.append(last_line)
+
+        data.fields.extend(["molecular_charge", "molecular_multiplicity"])
+        data.keywords = {"charge": int(molrec["molecular_charge"])}
+        if molrec["molecular_multiplicity"] != 1:
+            data.keywords["spin_restricted"] = "false"
 
     elif dtype == "madness":
 
