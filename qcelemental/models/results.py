@@ -3,7 +3,11 @@ from functools import partial
 from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Union
 
 import numpy as np
-from pydantic import Field, constr, validator
+
+try:
+    from pydantic.v1 import Field, constr, validator
+except ImportError:  # Will also trap ModuleNotFoundError
+    from pydantic import Field, constr, validator
 
 from ..util import provenance_stamp
 from .basemodels import ProtoModel, qcschema_draft
@@ -13,7 +17,10 @@ from .molecule import Molecule
 from .types import Array
 
 if TYPE_CHECKING:
-    from pydantic.typing import ReprArgs
+    try:
+        from pydantic.v1.typing import ReprArgs
+    except ImportError:  # Will also trap ModuleNotFoundError
+        from pydantic.typing import ReprArgs
 
 
 class AtomicResultProperties(ProtoModel):
@@ -37,16 +44,16 @@ class AtomicResultProperties(ProtoModel):
     nuclear_repulsion_energy: Optional[float] = Field(None, description="The nuclear repulsion energy.")
     return_energy: Optional[float] = Field(
         None,
-        description="The energy of the requested method, identical to :attr:`~qcelemental.models.AtomicResult.return_result` for :attr:`~qcelemental.models.AtomicInput.driver`\ =\ :attr:`~qcelemental.models.DriverEnum.energy` computations.",
+        description=f"The energy of the requested method, identical to :attr:`~qcelemental.models.AtomicResult.return_result` for :attr:`~qcelemental.models.AtomicInput.driver`\\ =\\ :attr:`~qcelemental.models.DriverEnum.energy` computations.",
     )
     return_gradient: Optional[Array[float]] = Field(
         None,
-        description="The gradient of the requested method, identical to :attr:`~qcelemental.models.AtomicResult.return_result` for :attr:`~qcelemental.models.AtomicInput.driver`\ =\ :attr:`~qcelemental.models.DriverEnum.gradient` computations.",
+        description=f"The gradient of the requested method, identical to :attr:`~qcelemental.models.AtomicResult.return_result` for :attr:`~qcelemental.models.AtomicInput.driver`\\ =\\ :attr:`~qcelemental.models.DriverEnum.gradient` computations.",
         units="E_h/a0",
     )
     return_hessian: Optional[Array[float]] = Field(
         None,
-        description="The Hessian of the requested method, identical to :attr:`~qcelemental.models.AtomicResult.return_result` for :attr:`~qcelemental.models.AtomicInput.driver`\ =\ :attr:`~qcelemental.models.DriverEnum.hessian` computations.",
+        description=f"The Hessian of the requested method, identical to :attr:`~qcelemental.models.AtomicResult.return_result` for :attr:`~qcelemental.models.AtomicInput.driver`\\ =\\ :attr:`~qcelemental.models.DriverEnum.hessian` computations.",
         units="E_h/a0^2",
     )
 
@@ -433,7 +440,6 @@ class WavefunctionProperties(ProtoModel):
 
     @validator("scf_eigenvalues_a", "scf_eigenvalues_b", "scf_occupations_a", "scf_occupations_b")
     def _assert1d(cls, v, values):
-
         try:
             v = v.reshape(-1)
         except (ValueError, AttributeError):
@@ -491,7 +497,6 @@ class WavefunctionProperties(ProtoModel):
         "occupations_b",
     )
     def _assert_exists(cls, v, values):
-
         if values.get(v, None) is None:
             raise ValueError(f"Return quantity {v} does not exist in the values.")
         return v
@@ -502,6 +507,7 @@ class WavefunctionProtocolEnum(str, Enum):
 
     all = "all"
     orbitals_and_eigenvalues = "orbitals_and_eigenvalues"
+    occupations_and_eigenvalues = "occupations_and_eigenvalues"
     return_results = "return_results"
     none = "none"
 
@@ -651,7 +657,6 @@ class AtomicResult(AtomicInput):
 
     @validator("wavefunction", pre=True)
     def _wavefunction_protocol(cls, value, values):
-
         # We are pre, gotta do extra checks
         if value is None:
             return value
@@ -698,6 +703,8 @@ class AtomicResult(AtomicInput):
             ]
         elif wfnp == "orbitals_and_eigenvalues":
             return_keep = ["orbitals_a", "orbitals_b", "eigenvalues_a", "eigenvalues_b"]
+        elif wfnp == "occupations_and_eigenvalues":
+            return_keep = ["occupations_a", "occupations_b", "eigenvalues_a", "eigenvalues_b"]
         else:
             raise ValueError(f"Protocol `wavefunction:{wfnp}` is not understood.")
 
@@ -720,7 +727,6 @@ class AtomicResult(AtomicInput):
 
     @validator("stdout")
     def _stdout_protocol(cls, value, values):
-
         # Do not propagate validation errors
         if "protocols" not in values:
             raise ValueError("Protocols was not properly formed.")
@@ -735,7 +741,6 @@ class AtomicResult(AtomicInput):
 
     @validator("native_files")
     def _native_file_protocol(cls, value, values):
-
         ancp = values["protocols"].native_files
         if ancp == "all":
             return value

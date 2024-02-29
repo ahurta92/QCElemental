@@ -5,7 +5,11 @@ import sys
 from typing import Callable, Dict, List, Tuple, Union
 
 import numpy as np
-from pydantic import BaseModel
+
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:  # Will also trap ModuleNotFoundError
+    from pydantic import BaseModel
 
 from qcelemental.models.basemodels import ProtoModel
 
@@ -128,7 +132,7 @@ def compare_values(
             f"""\t{label}: computed shape ({cptd.shape}) does not match ({xptd.shape}).""",
             return_message,
             quiet,
-        )  # lgtm: [py/syntax-error]
+        )
 
     digits1 = abs(int(np.log10(atol))) + 2
     digits_str = f"to atol={atol}"
@@ -303,7 +307,6 @@ def compare(
 
 
 def _compare_recursive(expected, computed, atol, rtol, _prefix=False, equal_phase=False):
-
     errors = []
     name = _prefix or "root"
     prefix = name + "."

@@ -1,7 +1,7 @@
 Changelog
 =========
 
-.. X.Y.0 / 2022-MM-DD
+.. X.Y.0 / 2023-MM-DD (Unreleased)
 .. -------------------
 ..
 .. Breaking Changes
@@ -15,6 +15,93 @@ Changelog
 ..
 .. Bug Fixes
 .. +++++++++
+..
+.. Misc.
+.. +++++
+
+
+0.27.1 / 2023-10-26
+-------------------
+
+Bug Fixes
++++++++++
+- (:pr:`329`) Continues :pr:`328` adding ``util.which`` workaround for only python v3.12.0 and psi4
+  (can be expanded) to correctly select among cmd, cmd.bat, cmd.exe.
+
+
+0.27.0 / 2023-10-24
+-------------------
+
+Breaking Changes
+++++++++++++++++
+
+New Features
+++++++++++++
+- (:pr:`326`, :pr:`327`) New protocol option ``occupations_and_eigenvalues`` added to
+  ``WavefunctionProperties`` to store lightweight fields.
+
+Enhancements
+++++++++++++
+- (:pr:`322`) Allow ``util.which`` to raise a clearer error when handling pyenv shims. Improve docs.
+
+Bug Fixes
++++++++++
+- (:pr:`325`, :issue:`324`) Ensure ``util.measure_coordinates`` isn't returning NaN angles just
+   because floating-point errors are outside arccos's ``[-1, 1]`` bounds.
+- (:pr:`315`) Stop resetting numpy print formatting.
+- (:pr:`328`) Add workaround for only python v3.12.0 and psi4 (can be expanded) to handle
+  ``util.which`` on Windows when a cmd (non-executable) and a cmd.<executable_extension> live
+  side-by-side. Otherwise see ``[WinError 193] %1 is not a valid Win32 application``.
+
+Misc.
++++++
+- (:pr:`320`) Reset ``black`` formatting to 2022.
+- (:pr:`327`) Enable Python v3.12 in poetry.
+- (:pr:`328`) Start Windows testing and cron testing.
+
+
+0.26.0 / 2023-07-31
+-------------------
+
+Breaking Changes
+++++++++++++++++
+
+- (:pr:`308`) Fix CI Pipelines. Dropped Python3.6. Bring CI pipelines into harmony with local dev experience. Lint and format entire code base. Accelerate CI pipelines. Update setup.py to correctly define extras packages. Breaking change due to dropped support for Python3.6. No code functionality was altered.
+   - Dropped support for dead Python 3.6. Minimum supported Python is now 3.7.
+   - Updated CONTRIBUTING.md to contain detailed instructions for developers on how to contribute.
+   - Fixed broken code that failed to prepend the "v" to version numbers.
+   - Updated CI to run without conda and using only packages defined in setup.py. CI is now much faster and runs the same way for local developers and GitHub Actions.
+   - Added test.sh and format.sh to devtools/scripts for easy execution of formatting and testing.
+   - Formatted all code with black. Sorted imports with isort.
+   - Added pre-commit to repo so code formatting, linting, and testing will all run as part of regular git workflow.
+
+Enhancements
+++++++++++++
+- (:pr:`310`) Modernize DevOps Tooling
+   - Added `/scripts` directory to root of project that contains scripts for testing, formatting code, and building docs.
+   - Updated build system from `setuptools` to modern `pyproject.toml` specification using `poetry` for the build backend.
+   - Removed complicated versioning code in favor of single source of truth in `pyproject.toml`. Using standard library `importlib` for looking up package version in `__init__.py` file.
+   - Added `build_docs.sh` script to `/scrips` and removed `Makefile` from `/docs`. Flattened `/docs` file structure.
+   - Removed `travis-ci` code from `devtools`
+   - Removed LGTM code (they no longer exist as a project).
+   - Bring all package directories under `black`, `isort`, and `autoflake` control.
+
+Bug Fixes
++++++++++
+- (:pr:`305`) Initialize `Molecule.extras` as empty dictionary.
+- (:pr:`311`) Update docs location from RTD to GH pages. Resolve escape char warnings. Update changelog.
+- (:pr:`311`) Clear up NumPy "Conversion of an array with ndim > 0 to a scalar is deprecated" in
+  `util.measure_coordinates` called by `Molecule.measure`.
+- (:pr:`314`) Import `pydantic.v1` from pydantic v2 so that QCElemental can work with any >=1.8.2 pydantic
+  until QCElemental is updated for v2.
+
+
+0.25.1 / 2022-10-31
+-------------------
+
+Bug Fixes
++++++++++
+- (:pr:`297`) Rearrange imports for compatibility with Pint v0.20. No new restrictions on pint version.
 
 
 0.25.0 / 2022-06-13

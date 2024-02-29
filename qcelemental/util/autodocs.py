@@ -3,7 +3,10 @@ from enum import Enum, EnumMeta
 from textwrap import dedent, indent
 from typing import Any
 
-from pydantic import BaseModel, BaseSettings
+try:
+    from pydantic.v1 import BaseModel, BaseSettings
+except ImportError:  # Will also trap ModuleNotFoundError
+    from pydantic import BaseModel, BaseSettings
 
 __all__ = ["auto_gen_docs_on_demand", "get_base_docs", "AutoPydanticDocGenerator"]
 
@@ -36,7 +39,11 @@ def is_pydantic(test_object):
 
 
 def parse_type_str(prop) -> str:
-    from pydantic import fields  # Import here to minimize issues
+    # Import here to minimize issues
+    try:
+        from pydantic.v1 import fields
+    except ImportError:  # Will also trap ModuleNotFoundError
+        from pydantic import fields
 
     typing_map = {
         fields.SHAPE_TUPLE: "Tuple",
@@ -151,7 +158,7 @@ def doc_formatter(base_docs: str, target_object: BaseModel, allow_failure: bool 
                 second_line = "\n" + indent(prop_desc, "    ") if prop_desc is not None else ""
                 # Finally, write the detailed doc string
                 new_doc += first_line + second_line + "\n"
-        except:  # lgtm [py/catch-base-exception]
+        except:
             if allow_failure:
                 new_doc = base_docs
             else:
@@ -178,7 +185,6 @@ class AutoPydanticDocGenerator:
 
         if not always_apply:
             if isinstance(target, BaseModel) or (isinstance(target, type) and issubclass(target, BaseModel)):
-
                 if (
                     hasattr(target, self.ALREADY_AUTODOCED_ATTR)
                     and getattr(target, self.ALREADY_AUTODOCED_ATTR) is True
@@ -205,7 +211,7 @@ class AutoPydanticDocGenerator:
             self.target.__doc__ = self.base_doc
             if hasattr(self.target, self.ALREADY_AUTODOCED_ATTR):
                 setattr(self.target, self.ALREADY_AUTODOCED_ATTR, False)
-        except:  # lgtm [py/catch-base-exception]
+        except:
             # Corner case where trying to reapply and failing cannot delete the new self mid __init__ since
             # base_doc has not been set.
             pass

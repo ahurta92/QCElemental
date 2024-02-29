@@ -10,7 +10,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Union, cast
 
 import numpy as np
-from pydantic import ConstrainedFloat, ConstrainedInt, Field, constr, validator
+
+try:
+    from pydantic.v1 import ConstrainedFloat, ConstrainedInt, Field, constr, validator
+except ImportError:  # Will also trap ModuleNotFoundError
+    from pydantic import ConstrainedFloat, ConstrainedInt, Field, constr, validator
 
 # molparse imports separated b/c https://github.com/python/mypy/issues/7203
 from ..molparse.from_arrays import from_arrays
@@ -27,7 +31,10 @@ from .common_models import Provenance, qcschema_molecule_default
 from .types import Array
 
 if TYPE_CHECKING:
-    from pydantic.typing import ReprArgs
+    try:
+        from pydantic.v1.typing import ReprArgs
+    except ImportError:  # Will also trap ModuleNotFoundError
+        from pydantic.typing import ReprArgs
 
 # Rounding quantities for hashing
 GEOMETRY_NOISE = 8
@@ -350,6 +357,8 @@ class Molecule(ProtoModel):
             kwargs = {**kwargs, **schema}  # Allow any extra fields
             validate = True
 
+        if "extras" not in kwargs:
+            kwargs["extras"] = {}
         super().__init__(**kwargs)
 
         # We are pulling out the values *explicitly* so that the pydantic skip_defaults works as expected
@@ -645,7 +654,6 @@ class Molecule(ProtoModel):
         atom_size = 0
 
         if group_fragments:
-
             # Loop through the real blocks
             frag_start = 0
             for frag in real:
@@ -767,7 +775,6 @@ class Molecule(ProtoModel):
         m = hashlib.sha1()
         concat = ""
 
-        np.set_printoptions(precision=16)
         for field in self.hash_fields:
             data = getattr(self, field)
             if field == "geometry":
@@ -1029,7 +1036,6 @@ class Molecule(ProtoModel):
 
         geom_noise = 10 ** (-GEOMETRY_NOISE)
         for num in range(new_geometry.shape[0]):
-
             for x in range(3):
                 if phase_check[x]:
                     continue

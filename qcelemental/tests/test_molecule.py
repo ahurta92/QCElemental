@@ -63,7 +63,9 @@ def test_molecule_data_constructor_dict():
     assert water_psi == water_from_json
     assert water_psi == Molecule.from_data(water_psi.to_string("psi4"), dtype="psi4")
 
-    assert water_psi.get_hash() == "3c4b98f515d64d1adc1648fe1fe1d6789e978d34"  # copied from schema_version=1
+    assert (
+        water_psi.get_hash() == "3c4b98f515d64d1adc1648fe1fe1d6789e978d34"  # pragma: allowlist secret
+    )  # copied from schema_version=1
     assert water_psi.schema_version == 2
     assert water_psi.schema_name == "qcschema_molecule"
 
@@ -90,16 +92,16 @@ def test_hash_canary():
     """,
         dtype="psi4",
     )
-    assert water_dimer_minima.get_hash() == "42f3ac52af52cf2105c252031334a2ad92aa911c"
+    assert water_dimer_minima.get_hash() == "42f3ac52af52cf2105c252031334a2ad92aa911c"  # pragma: allowlist secret
 
     # Check orientation
     mol = water_dimer_minima.orient_molecule()
-    assert mol.get_hash() == "632490a0601500bfc677e9277275f82fbc45affe"
+    assert mol.get_hash() == "632490a0601500bfc677e9277275f82fbc45affe"  # pragma: allowlist secret
 
     frag_0 = mol.get_fragment(0, orient=True)
     frag_1 = mol.get_fragment(1, orient=True)
-    assert frag_0.get_hash() == "d0b499739f763e8d3a5556b4ddaeded6a148e4d5"
-    assert frag_1.get_hash() == "bdc1f75bd1b7b999ff24783d7c1673452b91beb9"
+    assert frag_0.get_hash() == "d0b499739f763e8d3a5556b4ddaeded6a148e4d5"  # pragma: allowlist secret
+    assert frag_1.get_hash() == "bdc1f75bd1b7b999ff24783d7c1673452b91beb9"  # pragma: allowlist secret
 
 
 def test_molecule_np_constructors():
@@ -168,16 +170,15 @@ def test_water_minima_data():
             [-3.27523824, 0.81341093, -1.43347255],
         ],
     )
-    assert mol.get_hash() == "3c4b98f515d64d1adc1648fe1fe1d6789e978d34"
+    assert mol.get_hash() == "3c4b98f515d64d1adc1648fe1fe1d6789e978d34"  # pragma: allowlist secret
 
 
 def test_water_minima_fragment():
-
     mol = water_dimer_minima.copy()
     frag_0 = mol.get_fragment(0, orient=True)
     frag_1 = mol.get_fragment(1, orient=True)
-    assert frag_0.get_hash() == "5f31757232a9a594c46073082534ca8a6806d367"
-    assert frag_1.get_hash() == "bdc1f75bd1b7b999ff24783d7c1673452b91beb9"
+    assert frag_0.get_hash() == "5f31757232a9a594c46073082534ca8a6806d367"  # pragma: allowlist secret
+    assert frag_1.get_hash() == "bdc1f75bd1b7b999ff24783d7c1673452b91beb9"  # pragma: allowlist secret
 
     frag_0_1 = mol.get_fragment(0, 1)
     frag_1_0 = mol.get_fragment(1, 0)
@@ -193,13 +194,11 @@ def test_water_minima_fragment():
 
 
 def test_pretty_print():
-
     mol = water_dimer_minima.copy()
     assert isinstance(mol.pretty_print(), str)
 
 
 def test_to_string():
-
     mol = water_dimer_minima.copy()
     assert isinstance(mol.to_string("psi4"), str)
 
@@ -209,7 +208,6 @@ def test_to_string():
     [("json", "json"), ("xyz", "xyz"), ("numpy", "npy"), pytest.param("msgpack", "msgpack", marks=using_msgpack)],
 )
 def test_to_from_file_simple(tmp_path, dtype, filext):
-
     benchmol = Molecule.from_data(
         """
     O 0 0 0
@@ -228,7 +226,6 @@ def test_to_from_file_simple(tmp_path, dtype, filext):
 
 @pytest.mark.parametrize("dtype", ["json", "psi4"])
 def test_to_from_file_complex(tmp_path, dtype):
-
     p = tmp_path / ("water." + dtype)
     water_dimer_minima.to_file(p)
 
@@ -240,7 +237,6 @@ def test_to_from_file_complex(tmp_path, dtype):
     "dtype, filext", [("json", "json"), ("xyz+", "xyz"), pytest.param("msgpack", "msgpack", marks=using_msgpack)]
 )
 def test_to_from_file_charge_spin(tmp_path, dtype, filext):
-
     benchmol = Molecule.from_data(
         """
     1 2
@@ -486,7 +482,7 @@ def test_get_fragment(group_fragments, orient):
         assert dimers[1].get_hash() == dimers[4].get_hash()
         assert dimers[2].get_hash() == dimers[5].get_hash()
     else:
-        assert 0  # lgtm: [py/unreachable-statement]
+        assert 0
 
     ghdimers_nelectrons = [2, 2, 10, 10, 10, 10]
     ghdimers_nre = [0.0, 0.0, 9.163830150548483, 9.163830150548483, 9.163830150548483, 9.163830150548483]
@@ -506,11 +502,10 @@ def test_get_fragment(group_fragments, orient):
         assert ghdimers[2].get_hash() != ghdimers[5].get_hash()  # real pattern different
         assert not np.allclose(ghdimers[2].real, ghdimers[5].real)
     else:
-        assert 0  # lgtm: [py/unreachable-statement]
+        assert 0
 
 
 def test_molecule_repeated_hashing():
-
     mol = Molecule(
         **{
             "symbols": ["H", "O", "O", "H"],
@@ -541,10 +536,10 @@ def test_molecule_repeated_hashing():
         ([0, 1, 2, 3], 180.0),
         ([[0, 1, 2, 3]], [180.0]),
         ([[1, 3], [3, 1], [1, 2, 3]], [6.3282716, 6.3282716, 149.51606694803903]),
+        ([[0, 1, 2, 3], [3, 2, 1, 0]], [180.0, 180.0]),
     ],
 )
 def test_measurements(measure, result):
-
     Molecule(
         **{
             "symbols": ["H", "O", "O", "H"],
@@ -572,7 +567,6 @@ def test_measurements(measure, result):
     ],
 )
 def test_fragment_charge_configurations(f1c, f1m, f2c, f2m, tc, tm):
-
     mol = Molecule.from_data(
         """
     {f1c} {f1m}
@@ -604,7 +598,6 @@ def test_fragment_charge_configurations(f1c, f1m, f2c, f2m, tc, tm):
 
 
 def test_nuclearrepulsionenergy_nelectrons():
-
     mol = Molecule.from_data(
         """
     0 1
@@ -645,7 +638,6 @@ def test_nuclearrepulsionenergy_nelectrons():
 
 @using_nglview
 def test_show():
-
     water_dimer_minima.show()
 
 
@@ -683,7 +675,6 @@ def test_orient_nomasses():
     ],
 )
 def test_sparse_molecule_fields(mol_string, extra_keys):
-
     expected_keys = {
         "schema_name",
         "schema_version",
@@ -696,6 +687,7 @@ def test_sparse_molecule_fields(mol_string, extra_keys):
         "fix_com",
         "fix_orientation",
         "provenance",
+        "extras",
     }
     mol = Molecule.from_data(mol_string)
 
@@ -734,3 +726,11 @@ def test_nonphysical_spec():
     assert compare_values([100.0], mol.masses, "nonphysical mass")
 
     print(mol.to_string(dtype="psi4"))
+
+
+def test_extras():
+    mol = qcel.models.Molecule(symbols=["He"], geometry=[0, 0, 0])
+    assert mol.extras is not None
+
+    mol = qcel.models.Molecule(symbols=["He"], geometry=[0, 0, 0], extras={"foo": "bar"})
+    assert mol.extras["foo"] == "bar"

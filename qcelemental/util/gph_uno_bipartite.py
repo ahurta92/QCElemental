@@ -153,7 +153,6 @@ def _enumMaximumMatchingIter(g, match, all_matches, add_e=None):
     cycles = list(nx.simple_cycles(d))
 
     if len(cycles) == 0:
-
         # ---------If no cycle, find a feasible path---------
         all_uncovered = set(g.nodes).difference(set([ii[0] for ii in match]))
         all_uncovered = all_uncovered.difference(set([ii[1] for ii in match]))
@@ -167,7 +166,6 @@ def _enumMaximumMatchingIter(g, match, all_matches, add_e=None):
         idx = 0
         uncovered = all_uncovered[idx]
         while True:
-
             if uncovered not in nx.isolates(g):
                 paths = nx.single_source_shortest_path(d, uncovered, cutoff=2)
                 len2paths = [vv for kk, vv in paths.items() if len(vv) == 3]
@@ -371,7 +369,7 @@ def _enumMaximumMatchingIter2(adj, matchadj, all_matches, n1, add_e=None, check_
         d = matchadj.multiply(adj)
         d[n1:, :] = adj[n1:, :] - matchadj[n1:, :].multiply(adj[n1:, :])
 
-        dg = nx.from_numpy_matrix(d.toarray(), create_using=nx.DiGraph())
+        dg = nx.from_numpy_array(d.toarray(), create_using=nx.DiGraph())
         cycles = list(nx.simple_cycles(dg))
         if len(cycles) == 0:
             check_cycle = False

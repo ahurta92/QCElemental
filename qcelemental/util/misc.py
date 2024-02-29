@@ -175,7 +175,7 @@ def measure_coordinates(coordinates, measurements, degrees=False):
             raise KeyError(f"Unrecognized number of arguments for measurement {num}, found {len(m)}, expected 2-4.")
 
         val = func(*[coordinates[x] for x in m], **kwargs)
-        ret.append(float(val))
+        ret.append(val[0])
 
     if single:
         return ret[0]
@@ -249,7 +249,7 @@ def compute_angle(points1, points2, points3, *, degrees: bool = False) -> np.nda
     v23 = points2 - points3
 
     denom = _norm(v12) * _norm(v23)
-    cosine_angle = np.einsum("ij,ij->i", v12, v23) / denom
+    cosine_angle = np.clip(np.einsum("ij,ij->i", v12, v23) / denom, -1, 1)
 
     angle = np.pi - np.arccos(cosine_angle)
 

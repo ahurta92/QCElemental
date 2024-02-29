@@ -2,7 +2,11 @@ import json
 from typing import Any, Union
 
 import numpy as np
-from pydantic.json import pydantic_encoder
+
+try:
+    from pydantic.v1.json import pydantic_encoder
+except ImportError:  # Will also trap ModuleNotFoundError
+    from pydantic.json import pydantic_encoder
 
 from .importing import which_import
 
@@ -138,7 +142,6 @@ class JSONExtArrayEncoder(json.JSONEncoder):
 
 
 def jsonext_decode(obj: Any) -> Any:
-
     if "_nd_" in obj:
         arr = np.frombuffer(bytes.fromhex(obj["data"]), dtype=obj["dtype"])
         if "shape" in obj:

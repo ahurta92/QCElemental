@@ -2,7 +2,11 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pytest
-from pydantic import BaseModel, Field
+
+try:
+    from pydantic.v1 import BaseModel, Field
+except ImportError:  # Will also trap ModuleNotFoundError
+    from pydantic import BaseModel, Field
 
 import qcelemental as qcel
 from qcelemental.testing import compare_recursive, compare_values
@@ -141,7 +145,7 @@ def test_unnp(inp, expected):
 def test_distance():
     def _test_distance(p1, p2, value):
         tmp = qcel.util.compute_distance(p1, p2)
-        assert compare_values(value, float(tmp))
+        assert compare_values(value, tmp[0])
 
     _test_distance([0, 0, 0], [0, 0, 1], 1.0)
     _test_distance([0, 0, 0], [0, 0, 0], 0.0)
@@ -156,7 +160,7 @@ def test_distance():
 def test_angle():
     def _test_angle(p1, p2, p3, value, degrees=True):
         tmp = qcel.util.compute_angle(p1, p2, p3, degrees=degrees)
-        assert compare_values(value, float(tmp))
+        assert compare_values(value, tmp[0])
 
     # Check all 90 degree domains
     p1 = [5, 0, 0]
@@ -190,7 +194,7 @@ def test_angle():
 def test_dihedral1():
     def _test_dihedral(p1, p2, p3, p4, value, degrees=True):
         tmp = qcel.util.compute_dihedral(p1, p2, p3, p4, degrees=degrees)
-        assert compare_values(value, float(tmp), label="test_dihedral1")
+        assert compare_values(value, tmp[0], label="test_dihedral1")
 
     p1 = [0, 0, 0]
     p2 = [0, 2, 0]
@@ -227,7 +231,7 @@ def test_dihedral2():
 
     def _test_dihedral(p1, p2, p3, p4, value, degrees=True):
         tmp = qcel.util.compute_dihedral(p1, p2, p3, p4, degrees=degrees)
-        assert compare_values(value, float(tmp), label="test_dihedral1")
+        assert compare_values(value, tmp[0], label="test_dihedral1")
 
     p0 = [24.969, 13.428, 30.692]
     p1 = [24.044, 12.661, 29.808]
