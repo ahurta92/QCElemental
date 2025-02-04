@@ -1,7 +1,7 @@
 Changelog
 =========
 
-.. X.Y.0 / 2023-MM-DD (Unreleased)
+.. X.Y.0 / 2025-MM-DD (Unreleased)
 .. -------------------
 ..
 .. Breaking Changes
@@ -18,6 +18,64 @@ Changelog
 ..
 .. Misc.
 .. +++++
+
+
+0.29.0 / 2025-01-13
+-------------------
+
+Breaking Changes
+++++++++++++++++
+- (:pr:`341`) `packaging` is now a required dependency.
+
+New Features
+++++++++++++
+- (:pr:`350`, :pr:`318`, :issue:`317`) Make behavior consistent between molecular_charge/
+  fragment_charges and molecular_multiplicity/fragment_multiplicities by allowing floating point
+  numbers for multiplicities. Non-fractional multiplicities are coerced to integers for minimal
+  disruption. @awvwgk
+- (:pr:`360`) ``Molecule`` learned new functions ``element_composition`` and ``molecular_weight``.
+  The first gives a dictionary of element symbols and counts, while the second gives the weight in amu.
+  Both can access the whole molecule or per-fragment like the existing ``nelectrons`` and
+  ``nuclear_repulsion_energy``. All four can now select all atoms or exclude ghosts (default).
+
+Enhancements
+++++++++++++
+- (:pr:`340`, :issue:`330`) Add molecular charge and multiplicity to Molecule repr formula,
+  so neutral singlet unchanged but radical cation has '2^formula+'. @awvwgk
+- (:pr:`341`) Use `packaging` instead of deprecated `setuptools` to provide version parsing for
+  `qcelemental.util.parse_version` and `qcelemental.util.safe_version`. This behaves slightly
+  different; "v7.0.0+N/A" was processed ok before but fails with newer version. @berquist
+- (:pr:`353`) Copied in `pkg_resources.safe_version` code as follow-up to :pr:`341`, Eric's switch
+  to packaging. Both NWChem and Gamess are now working again.
+- (:pr:`343`) Molecular and fragment multiplicities are now always enforced to be >=1.0. Previously
+  this wasn't checked for `Molecule(..., validate=False)`. Error messages will change sometimes
+  change for `validate=True` (run by default).
+- (:pr:`343`) `qcelemental.molparse` newly allows floats that are ints (e.g., 1.0) for multiplicity.
+  Previously it would raise an error about not being an int.
+- (:pr:`337`) Solidify the (unchanged) schema_name for `QCInputSpecification` and `AtomicResult`
+  into Literals where previously they had been regex strings coerced into a single name. The literals
+  allow pydantic to discriminate models, which benefits GeneralizedOptimizationInput/Result in
+  QCManyBody/QCEngine/OptKing. The only way this can interfere is if schema producers have whitespace
+  around `schema_name` for these models or if any `AtomicResult`s are still using "qc_schema_output",
+  which looks to have only been added for compatibility with pre-pydantic QCSchema.
+
+Bug Fixes
++++++++++
+- (:pr:`342`, :issue:`333`) Update some docs settings and requirements for newer tools. Should fix
+  graphviz class diagram in docs.
+
+Misc.
++++++
+- (:pr:`344`, :issue:`282`) Add a citation file since QCElemental doesn't have a paper. @lilyminium
+
+
+0.28.0 / 2024-06-21
+-------------------
+
+Enhancements
+++++++++++++
+- (:pr:`338`) Adapts for numpy v2 (only works with pint >= v0.24). v1 still compatible.
+- (:pr:`335`, :issue:`334`) Numpy >=1.26 only works with pint >=0.21. @TyBalduf
 
 
 0.27.1 / 2023-10-26

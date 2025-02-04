@@ -2,6 +2,12 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 try:
+    from typing import Literal
+except ImportError:
+    # remove when minimum py38
+    from typing_extensions import Literal
+
+try:
     from pydantic.v1 import Field, conlist, constr, validator
 except ImportError:  # Will also trap ModuleNotFoundError
     from pydantic import Field, conlist, constr, validator
@@ -58,7 +64,7 @@ class QCInputSpecification(ProtoModel):
     A compute description for energy, gradient, and Hessian computations used in a geometry optimization.
     """
 
-    schema_name: constr(strip_whitespace=True, regex=qcschema_input_default) = qcschema_input_default  # type: ignore
+    schema_name: Literal["qcschema_input"] = Field(qcschema_input_default)
     schema_version: int = 1
 
     driver: DriverEnum = Field(DriverEnum.gradient, description=str(DriverEnum.__doc__))
@@ -72,6 +78,8 @@ class QCInputSpecification(ProtoModel):
 
 
 class OptimizationInput(ProtoModel):
+    """QCSchema input directive for geometry optimization."""
+
     id: Optional[str] = None
     hash_index: Optional[str] = None
     schema_name: constr(  # type: ignore
@@ -96,6 +104,8 @@ class OptimizationInput(ProtoModel):
 
 
 class OptimizationResult(OptimizationInput):
+    """QCSchema results model for geometry optimization."""
+
     schema_name: constr(  # type: ignore
         strip_whitespace=True, regex=qcschema_optimization_output_default
     ) = qcschema_optimization_output_default

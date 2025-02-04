@@ -2,6 +2,7 @@
 Tests the imports and exports of the Molecule object.
 """
 
+
 import numpy as np
 import pytest
 
@@ -139,6 +140,51 @@ def test_molecule_compare():
 
     water_molecule3 = water_molecule.copy(update={"geometry": (water_molecule.geometry + np.array([0.1, 0, 0]))})
     assert water_molecule != water_molecule3
+
+
+def test_molecule_repr_chgmult():
+    wat1 = water_molecule.copy()
+    assert "formula='H2O'," in wat1.__repr__(), "charge/mult wrongly present in Molecule repr"
+
+    wat2 = water_dimer_minima.dict()
+    wat2["fragment_charges"] = [1, 0]
+    for field in ["molecular_charge", "molecular_multiplicity", "fragment_multiplicities", "validated"]:
+        wat2.pop(field)
+    wat2 = Molecule(**wat2)
+    assert "formula='2^H4O2+'," in wat2.__repr__(), "charge/mult missing from Molecule repr"
+
+    two_pentanol_radcat = Molecule.from_data(
+        """
+        1 2
+        C         -4.43914        1.67538       -0.14135
+        C         -2.91385        1.70652       -0.10603
+        H         -4.82523        2.67391       -0.43607
+        H         -4.84330        1.41950        0.86129
+        H         -4.79340        0.92520       -0.88015
+        H         -2.59305        2.48187        0.62264
+        H         -2.53750        1.98573       -1.11429
+        C         -2.34173        0.34025        0.29616
+        H         -2.72306        0.06156        1.30365
+        C         -0.80326        0.34498        0.31454
+        H         -2.68994       -0.42103       -0.43686
+        O         -0.32958        1.26295        1.26740
+        H         -0.42012        0.59993       -0.70288
+        C         -0.26341       -1.04173        0.66218
+        H         -0.61130       -1.35318        1.67053
+        H          0.84725       -1.02539        0.65807
+        H         -0.60666       -1.78872       -0.08521
+        H         -0.13614        2.11102        0.78881
+    """
+    )
+    assert "formula='2^C5H12O+'," in two_pentanol_radcat.__repr__(), "charge/mult missing from Molecule repr"
+
+    Oanion = Molecule.from_data(
+        """
+        -2 1
+        O 0 0 0
+    """
+    )
+    assert "formula='O--'," in Oanion.__repr__(), "charge/mult missing from Molecule repr"
 
 
 def test_water_minima_data():
@@ -322,16 +368,20 @@ def test_water_orient():
 
     # Make sure the fragments match
     assert frag_0.get_hash() == frag_1.get_hash()
+    assert frag_0.get_hash() == "d0b499739f763e8d3a5556b4ddaeded6a148e4d5"
 
     # Make sure the complexes match
     frag_0_1 = mol.get_fragment(0, 1, orient=True, group_fragments=True)
     frag_1_0 = mol.get_fragment(1, 0, orient=True, group_fragments=True)
     assert frag_0_1.get_hash() == frag_1_0.get_hash()
+    assert frag_0_1.get_hash() == "bd23a8a5e48a3a6a32011559fdddc958bb70343b"
 
     # Fragments not reordered, should be different molecules.
     frag_0_1 = mol.get_fragment(0, 1, orient=True, group_fragments=False)
     frag_1_0 = mol.get_fragment(1, 0, orient=True, group_fragments=False)
     assert frag_0_1.get_hash() != frag_1_0.get_hash()
+    assert frag_0_1.get_hash() == "bd23a8a5e48a3a6a32011559fdddc958bb70343b"
+    assert frag_1_0.get_hash() == "9ed8bdc4ae559c20816d65225fdb1ae3c29d149f"
 
     # These are identical molecules, but should be different with ghost
     mol = Molecule.from_data(
@@ -354,6 +404,7 @@ def test_water_orient():
     # Make sure the fragments match
     assert frag_0.molecular_multiplicity == 1
     assert frag_0.get_hash() == frag_1.get_hash()
+    assert frag_0.get_hash() == "77b272802d61b578b1c65bb87747a89e53e015a7"
 
     # Make sure the complexes match
     frag_0_1 = mol.get_fragment(0, 1, orient=True)
@@ -362,6 +413,8 @@ def test_water_orient():
     # Ghost fragments should prevent overlap
     assert frag_0_1.molecular_multiplicity == 1
     assert frag_0_1.get_hash() != frag_1_0.get_hash()
+    assert frag_0_1.get_hash() == "4a4cd4d0ab0eef8fed2221fb692c3b1fbf4834de"
+    assert frag_1_0.get_hash() == "4cc0b30f9f50dd85f4f2036a683865bf17ded803"
 
 
 def test_molecule_errors_extra():
@@ -477,10 +530,12 @@ def test_get_fragment(group_fragments, orient):
         assert dimers[0].get_hash() != dimers[3].get_hash()  # atoms out of order
         assert dimers[1].get_hash() != dimers[4].get_hash()  # atoms out of order
         assert dimers[2].get_hash() == dimers[5].get_hash()
+        assert dimers[5].get_hash() == "f1d6551f95ce9467dbcce7c48e11bb98d0f1fb98"
     elif not group_fragments and not orient:
         assert dimers[0].get_hash() == dimers[3].get_hash()
         assert dimers[1].get_hash() == dimers[4].get_hash()
         assert dimers[2].get_hash() == dimers[5].get_hash()
+        assert dimers[5].get_hash() == "1bd9100e99748a0c34b01cef558ea5cf4ae6ab85"
     else:
         assert 0
 
@@ -496,11 +551,13 @@ def test_get_fragment(group_fragments, orient):
         assert ghdimers[0].get_hash() != ghdimers[3].get_hash()  # diff atoms ghosted
         assert ghdimers[1].get_hash() != ghdimers[4].get_hash()  # diff atoms ghosted
         assert ghdimers[2].get_hash() == ghdimers[5].get_hash()
+        assert ghdimers[5].get_hash() == "bd23a8a5e48a3a6a32011559fdddc958bb70343b"
     elif not group_fragments and not orient:
         assert ghdimers[0].get_hash() != ghdimers[3].get_hash()  # diff atoms ghosted
         assert ghdimers[1].get_hash() != ghdimers[4].get_hash()  # diff atoms ghosted
         assert ghdimers[2].get_hash() != ghdimers[5].get_hash()  # real pattern different
         assert not np.allclose(ghdimers[2].real, ghdimers[5].real)
+        assert ghdimers[5].get_hash() == "9d1fd57e90735a47af4156e1d72b7e8e78fb44eb"
     else:
         assert 0
 
@@ -519,6 +576,7 @@ def test_molecule_repeated_hashing():
     )
 
     h1 = mol.get_hash()
+    assert h1 == "7e604937e8a0c8e4c6426906e25b3002f785b1fc"
     assert mol.get_molecular_formula() == "H2O2"
 
     mol2 = Molecule(orient=False, **mol.dict())
@@ -734,3 +792,201 @@ def test_extras():
 
     mol = qcel.models.Molecule(symbols=["He"], geometry=[0, 0, 0], extras={"foo": "bar"})
     assert mol.extras["foo"] == "bar"
+
+
+_ref_mol_multiplicity_hash = {
+    "singlet": "b3855c64",
+    "triplet": "7caca87a",
+    "disinglet": "83a85546",
+    "ditriplet": "71d6ba82",
+    # float mult
+    "singlet_point1": "4e9e2587",
+    "singlet_epsilon": "ad3f5fab",
+    "triplet_point1": "ad35cc28",
+    "triplet_point1_minus": "b63d6983",
+    "triplet_point00001": "7107b7ac",
+    "disinglet_epsilon": "fb0aaaca",
+    "ditriplet_point1": "33d47d5f",
+    "ditriplet_point00001": "7f0ac640",
+}
+
+
+@pytest.mark.parametrize(
+    "mult_in,mult_store,validate,exp_hash",
+    [
+        pytest.param(3, 3, False, "triplet"),
+        pytest.param(3, 3, True, "triplet"),
+        # before float multiplicity was allowed, 3.1 (below) was coerced into 3 with validate=False,
+        #   and validate=True threw a type-mentioning error. Now, 2.9 is allowed for both validate=T/F
+        pytest.param(3.1, 3.1, False, "triplet_point1"),
+        # validate=True counterpart fails b/c insufficient electrons in He for more than triplet
+        pytest.param(2.9, 2.9, False, "triplet_point1_minus"),
+        pytest.param(2.9, 2.9, True, "triplet_point1_minus"),
+        pytest.param(3.00001, 3.00001, False, "triplet_point00001"),
+        # validate=True counterpart fails like 3.1 above
+        pytest.param(2.99999, 2.99999, False, "triplet_point00001"),  # hash agrees w/3.00001 above b/c <CHARGE_NOISE
+        pytest.param(2.99999, 2.99999, True, "triplet_point00001"),
+        pytest.param(3.0, 3, False, "triplet"),
+        pytest.param(3.0, 3, True, "triplet"),
+        pytest.param(1, 1, False, "singlet"),
+        pytest.param(1, 1, True, "singlet"),
+        pytest.param(1.000000000000000000002, 1, False, "singlet"),
+        pytest.param(1.000000000000000000002, 1, True, "singlet"),
+        pytest.param(1.000000000000002, 1.000000000000002, False, "singlet_epsilon"),
+        pytest.param(1.000000000000002, 1.000000000000002, True, "singlet_epsilon"),
+        pytest.param(1.1, 1.1, False, "singlet_point1"),
+        pytest.param(1.1, 1.1, True, "singlet_point1"),
+        pytest.param(None, 1, False, "singlet"),
+        pytest.param(None, 1, True, "singlet"),
+        # fmt: off
+        pytest.param(3., 3, False, "triplet"),
+        pytest.param(3., 3, True, "triplet"),
+        # fmt: on
+    ],
+)
+def test_mol_multiplicity_types(mult_in, mult_store, validate, exp_hash):
+    # validate=False passes through pydantic validators. =True passes through molparse.
+
+    mol_args = {"symbols": ["He"], "geometry": [0, 0, 0], "validate": validate}
+    if mult_in is not None:
+        mol_args["molecular_multiplicity"] = mult_in
+
+    mol = qcel.models.Molecule(**mol_args)
+
+    assert mult_store == mol.molecular_multiplicity
+    assert type(mult_store) is type(mol.molecular_multiplicity)
+    assert mol.get_hash()[:8] == _ref_mol_multiplicity_hash[exp_hash]
+
+
+@pytest.mark.parametrize(
+    "mult_in,validate,error",
+    [
+        pytest.param(-3, False, "Multiplicity must be positive"),
+        pytest.param(-3, True, "Multiplicity must be positive"),
+        pytest.param(0.9, False, "Multiplicity must be positive"),
+        pytest.param(0.9, True, "Multiplicity must be positive"),
+        pytest.param(3.1, True, "Inconsistent or unspecified chg/mult"),  # insufficient electrons in He
+    ],
+)
+def test_mol_multiplicity_types_errors(mult_in, validate, error):
+    mol_args = {"symbols": ["He"], "geometry": [0, 0, 0], "validate": validate}
+    if mult_in is not None:
+        mol_args["molecular_multiplicity"] = mult_in
+
+    with pytest.raises((ValueError, qcel.ValidationError)) as e:
+        qcel.models.Molecule(**mol_args)
+
+    assert error in str(e.value)
+
+
+@pytest.mark.parametrize(
+    "mol_mult_in,mult_in,mult_store,validate,exp_hash",
+    [
+        pytest.param(5, [3, 3], [3, 3], False, "ditriplet"),
+        pytest.param(5, [3, 3], [3, 3], True, "ditriplet"),
+        # before float multiplicity was allowed, [3.1, 3.4] (below) were coerced into [3, 3] with validate=False.
+        #   Now, [2.9, 2.9] is allowed for both validate=T/F.
+        pytest.param(5, [3.1, 3.4], [3.1, 3.4], False, "ditriplet_point1"),
+        pytest.param(5, [2.99999, 3.00001], [2.99999, 3.00001], False, "ditriplet_point00001"),
+        pytest.param(5, [2.99999, 3.00001], [2.99999, 3.00001], True, "ditriplet_point00001"),
+        # fmt: off
+        pytest.param(5, [3.0, 3.], [3, 3], False, "ditriplet"),
+        pytest.param(5, [3.0, 3.], [3, 3], True, "ditriplet"),
+        # fmt: on
+        pytest.param(1, [1, 1], [1, 1], False, "disinglet"),
+        pytest.param(1, [1, 1], [1, 1], True, "disinglet"),
+        # None in frag_mult not allowed for validate=False
+        pytest.param(1, [None, None], [1, 1], True, "disinglet"),
+        pytest.param(1, [1.000000000000000000002, 0.999999999999999999998], [1, 1], False, "disinglet"),
+        pytest.param(1, [1.000000000000000000002, 0.999999999999999999998], [1, 1], True, "disinglet"),
+        pytest.param(
+            1,
+            [1.000000000000002, 1.000000000000004],
+            [1.000000000000002, 1.000000000000004],
+            False,
+            "disinglet_epsilon",
+        ),
+        pytest.param(
+            1, [1.000000000000002, 1.000000000000004], [1.000000000000002, 1.000000000000004], True, "disinglet_epsilon"
+        ),
+    ],
+)
+def test_frag_multiplicity_types(mol_mult_in, mult_in, mult_store, validate, exp_hash):
+    # validate=False passes through pydantic validators. =True passes through molparse.
+
+    mol_args = {
+        "symbols": ["He", "Ne"],
+        "geometry": [0, 0, 0, 2, 0, 0],
+        "fragments": [[0], [1]],
+        "validate": validate,
+        # below three passed in so hashes match btwn validate=T/F. otherwise, validate=False never
+        #   populates these fields
+        "molecular_charge": 0,
+        "fragment_charges": [0, 0],
+        "molecular_multiplicity": mol_mult_in,
+    }
+    if mult_in is not None:
+        mol_args["fragment_multiplicities"] = mult_in
+
+    mol = qcel.models.Molecule(**mol_args)
+
+    assert mult_store == mol.fragment_multiplicities
+    assert type(mult_store) is type(mol.fragment_multiplicities)
+    assert mol.get_hash()[:8] == _ref_mol_multiplicity_hash[exp_hash]
+
+
+@pytest.mark.parametrize(
+    "mult_in,validate,error",
+    [
+        pytest.param([-3, 1], False, "Multiplicity must be positive"),
+        pytest.param([-3, 1], True, "Multiplicity must be positive"),
+        pytest.param(
+            [3.1, 3.4], True, "Inconsistent or unspecified chg/mult"
+        ),  # insufficient e- for triplet+ on He in frag 1
+    ],
+)
+def test_frag_multiplicity_types_errors(mult_in, validate, error):
+    mol_args = {"symbols": ["He", "Ne"], "geometry": [0, 0, 0, 2, 0, 0], "fragments": [[0], [1]], "validate": validate}
+    if mult_in is not None:
+        mol_args["fragment_multiplicities"] = mult_in
+
+    with pytest.raises((ValueError, qcel.ValidationError)) as e:
+        qcel.models.Molecule(**mol_args)
+
+    assert error in str(e.value)
+
+
+_one_helium_mass = 4.00260325413
+
+
+@pytest.mark.parametrize(
+    "mol_string,args,formula,formula_dict,molecular_weight,nelec,nre",
+    [
+        ("He 0 0 0", {}, "He", {"He": 1}, _one_helium_mass, 2, 0.0),
+        ("He 0 0 0\n--\nHe 0 0 5", {}, "He2", {"He": 2}, 2 * _one_helium_mass, 4, 0.4233417684),
+        ("He 0 0 0\n--\n@He 0 0 5", {}, "He2", {"He": 1}, _one_helium_mass, 2, 0.0),
+        ("He 0 0 0\n--\n@He 0 0 5", {"ifr": 0}, "He2", {"He": 1}, _one_helium_mass, 2, 0.0),
+        ("He 0 0 0\n--\n@He 0 0 5", {"ifr": 1}, "He2", {}, 0.0, 0, 0.0),
+        ("He 0 0 0\n--\n@He 0 0 5", {"real_only": False}, "He2", {"He": 2}, 2 * _one_helium_mass, 4, 0.4233417684),
+        ("He 0 0 0\n--\n@He 0 0 5", {"real_only": False, "ifr": 0}, "He2", {"He": 1}, _one_helium_mass, 2, 0.0),
+        ("He 0 0 0\n--\n@He 0 0 5", {"real_only": False, "ifr": 1}, "He2", {"He": 1}, _one_helium_mass, 2, 0.0),
+        ("4He 0 0 0", {}, "He", {"He": 1}, _one_helium_mass, 2, 0.0),
+        ("5He4 0 0 0", {}, "He", {"He": 1}, 5.012057, 2, 0.0),  # suffix-4 is label
+        ("He@3.14 0 0 0", {}, "He", {"He": 1}, 3.14, 2, 0.0),
+    ],
+)
+def test_molecular_weight(mol_string, args, formula, formula_dict, molecular_weight, nelec, nre):
+    mol = Molecule.from_data(mol_string)
+
+    assert mol.molecular_weight(**args) == molecular_weight, f"molecular_weight: ret != {molecular_weight}"
+    assert mol.nelectrons(**args) == nelec, f"nelectrons: ret != {nelec}"
+    assert abs(mol.nuclear_repulsion_energy(**args) - nre) < 1.0e-5, f"nre: ret != {nre}"
+    assert mol.element_composition(**args) == formula_dict, f"element_composition: ret != {formula_dict}"
+    assert mol.get_molecular_formula() == formula, f"get_molecular_formula: ret != {formula}"
+
+    # after py38
+    # assert (ret := mol.molecular_weight(**args)) == molecular_weight, f"molecular_weight: {ret} != {molecular_weight}"
+    # assert (ret := mol.nelectrons(**args)) == nelec, f"nelectrons: {ret} != {nelec}"
+    # assert (abs(ret := mol.nuclear_repulsion_energy(**args)) - nre) < 1.0e-5, f"nre: {ret} != {nre}"
+    # assert (ret := mol.element_composition(**args)) == formula_dict, f"element_composition: {ret} != {formula_dict}"
+    # assert (ret := mol.get_molecular_formula()) == formula, f"get_molecular_formula: {ret} != {formula}"

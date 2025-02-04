@@ -1,7 +1,11 @@
 import os
+import re
 import shutil
 import sys
-from typing import List, Union
+from typing import TYPE_CHECKING, List, Union
+
+if TYPE_CHECKING:
+    from packaging.version import Version
 
 
 def which_import(
@@ -127,20 +131,26 @@ def which(
         return ans
 
 
-def safe_version(*args, **kwargs) -> str:
+def safe_version(version) -> str:
     """
-    Package resources is a very slow load
+    Convert an arbitrary string to a standard version string by pkg_resources definition.
     """
-    import pkg_resources
+    # from https://github.com/pypa/setuptools/blob/main/pkg_resources/__init__.py
+    # original function deprecated and never one-to-one replaced
+    from packaging.version import InvalidVersion, Version
 
-    version = pkg_resources.safe_version(*args, **kwargs)
-    return version
+    try:
+        # normalize the version
+        return str(Version(version))
+    except InvalidVersion:
+        version = version.replace(" ", ".")
+        return re.sub("[^A-Za-z0-9.]+", "-", version)
 
 
-def parse_version(*args, **kwargs):
+def parse_version(version) -> "Version":
     """
-    Package resources is a very slow load
+    Legitimate version
     """
-    import pkg_resources
+    from packaging.version import parse
 
-    return pkg_resources.parse_version(*args, **kwargs)
+    return parse(version)
