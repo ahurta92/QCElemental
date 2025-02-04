@@ -25,7 +25,7 @@ def to_string(
     molrec
         Psi4 json Molecule spec.
     dtype
-        {"xyz", "cfour", "nwchem", "molpro", "orca", "turbomole", "qchem"}
+        {"xyz", "cfour", "nwchem", "molpro", "orca", "turbomole", "qchem","madness"}
         Overall string format. Note that it's possible to request variations
         that don't fit the dtype spec so may not be re-readable (e.g., ghost
         and mass in nucleus label with ``'xyz'``).
@@ -86,6 +86,7 @@ def to_string(
         "terachem": "Bohr",
         "turbomole": "Bohr",
         "madness": "Bohr",  # madness by default reads au and optionally can read angs/angstrom
+        "mrchem": "Bohr",
     }
     if dtype not in default_units:
         raise KeyError(f"dtype '{dtype}' not understood.")
@@ -242,29 +243,6 @@ def to_string(
             data.keywords["scf__nopen"] = molrec["molecular_multiplicity"] - 1
             data.keywords["dft__mult"] = molrec["molecular_multiplicity"]
             data.keywords["mcscf__multiplicity"] = molrec["molecular_multiplicity"]
-
-    elif dtype == "madness":
-        atom_format = "{elem}"
-        ghost_format = "GH"
-        # TODO handle which units valid
-        umap = {"bohr": "au", "angstrom": "angstrom"}
-
-        atoms = _atoms_formatter(molrec, geom, atom_format, ghost_format, width, prec, 2)
-
-        first_line = f"""geometry"""
-        second_line = f"""units {umap.get(units.lower())}"""
-        last_line = """end"""
-        # noautosym nocenter  # no reorienting input geometry
-        smol = [first_line]
-        smol.append(second_line)
-        smol.extend(atoms)
-        smol.append(last_line)
-
-        data.fields.extend(["molecular_charge", "molecular_multiplicity"])
-        data.keywords = {"charge": int(molrec["molecular_charge"])}
-        if molrec["molecular_multiplicity"] != 1:
-            data.keywords["spin_restricted"] = "false"
-
     elif dtype == "madness":
 
         atom_format = "{elem}"
@@ -280,11 +258,91 @@ def to_string(
         # noautosym nocenter  # no reorienting input geometry
         smol = [first_line]
         smol.append(second_line)
+        eprec = molrec.get("eprec", None)
+        if eprec is not None:
+            smol.append(f"eprec {eprec}")
+
         smol.extend(atoms)
         smol.append(last_line)
 
+        symbols = molrec["elem"]
+        geometry = geom
+
+        class geometry_parameters:
+            def __init__(
+                self,
+                eprec=None,
+                field=None,
+                no_orient=None,
+                psp_calc=None,
+                pure_ae=None,
+                symtol=None,
+                core_type=None,
+                units=None,
+            ):
+
+                self.eprec = 1e-4
+                self.field = [0.0, 0.0, 0.0]
+                self.no_orient = False
+                self.psp_calc = False
+                self.pure_ae = True
+                self.symtol = -1e-2
+                self.core_type = "none"
+                self.units = "atomic"
+
+                if eprec is not None:
+                    self.eprec = float(eprec)
+                if field is not None:
+                    self.field = field
+                if no_orient is not None:
+                    self.no_orient = no_orient
+                if psp_calc is not None:
+                    self.psp_calc = psp_calc
+                if pure_ae is not None:
+                    self.pure_ae = pure_ae
+                if symtol is not None:
+                    self.symtol = symtol
+                if core_type is not None:
+                    self.core_type = core_type
+                if units is not None:
+                    self.units = umap.get(units.lower())
+
+            def __repr__(self):
+                return f"eprec: {self.eprec}, field: {self.field}, no_orient: {self.no_orient}, psp_calc: {self.psp_calc}, pure_ae: {self.pure_ae}, symtol: {self.symtol}, core_type: {self.core_type}, units: {self.units}"
+
+            def to_dict(self):
+                return {
+                    "eprec": float(self.eprec),
+                    "field": self.field,
+                    "no_orient": self.no_orient,
+                    "psp_calc": self.psp_calc,
+                    "pure_ae": self.pure_ae,
+                    "symtol": self.symtol,
+                    "core_type": self.core_type,
+                    "units": self.units,
+                }
+
+        parameters = geometry_parameters(
+            eprec=molrec.get("eprec", None),
+            field=[0.0, 0.0, 0.0],
+            no_orient=molrec.get("no_orient", None),
+            psp_calc=molrec.get("psp_calc", False),
+            pure_ae=molrec.get("pure_ae", True),
+            symtol=molrec.get("symtol", None),
+            core_type=molrec.get("core_type", None),
+            units=umap.get(units.lower()),
+        )
+
         data.fields.extend(["molecular_charge", "molecular_multiplicity"])
-        data.keywords = {"charge": int(molrec["molecular_charge"])}
+        data.keywords = {
+            "charge": int(molrec["molecular_charge"]),
+            "madqc_json": {
+                "name": name,
+                "symbols": symbols.tolist(),
+                "geometry": geometry.tolist(),
+                "parameters": parameters.to_dict(),
+            },
+        }
         if molrec["molecular_multiplicity"] != 1:
             data.keywords["spin_restricted"] = "false"
 
