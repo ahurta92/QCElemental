@@ -305,7 +305,7 @@ def to_string(
                 if core_type is not None:
                     self.core_type = core_type
                 if units is not None:
-                    self.units = umap.get(units.lower())
+                    self.units = units 
 
             def __repr__(self):
                 return f"eprec: {self.eprec}, field: {self.field}, no_orient: {self.no_orient}, psp_calc: {self.psp_calc}, pure_ae: {self.pure_ae}, symtol: {self.symtol}, core_type: {self.core_type}, units: {self.units}"
