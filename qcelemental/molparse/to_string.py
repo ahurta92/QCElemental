@@ -85,7 +85,8 @@ def to_string(
         "qchem": "Bohr",
         "terachem": "Bohr",
         "turbomole": "Bohr",
-        "madness": "Bohr",  # madness by default reads au and optionally can read angs/angstrom
+        "madness": "Bohr",
+        "dalton": "Bohr",
         "mrchem": "Bohr",
     }
     if dtype not in default_units:
@@ -252,7 +253,7 @@ def to_string(
 
         atoms = _atoms_formatter(molrec, geom, atom_format, ghost_format, width, prec, 2)
 
-        first_line = f"""geometry"""
+        first_line = f"""molecule"""
         second_line = f"""units {umap.get(units.lower())}"""
         last_line = """end"""
         # noautosym nocenter  # no reorienting input geometry
@@ -305,7 +306,7 @@ def to_string(
                 if core_type is not None:
                     self.core_type = core_type
                 if units is not None:
-                    self.units = units 
+                    self.units = units
 
             def __repr__(self):
                 return f"eprec: {self.eprec}, field: {self.field}, no_orient: {self.no_orient}, psp_calc: {self.psp_calc}, pure_ae: {self.pure_ae}, symtol: {self.symtol}, core_type: {self.core_type}, units: {self.units}"
@@ -345,6 +346,30 @@ def to_string(
         }
         if molrec["molecular_multiplicity"] != 1:
             data.keywords["spin_restricted"] = "false"
+    elif dtype == "dalton":
+        atom_format = "{elem}"
+        ghost_format = "GH"
+        # TODO handle which units valid
+        umap = {"bohr": "au", "angstrom": "angstrom"}
+
+        atoms = _atoms_formatter(molrec, geom, atom_format, ghost_format, width, prec, 2)
+
+        first_line = f"""**DALTON INPUT**"""
+        second_line = f"""**MOLECULE**"""
+        charge_line = f"""{int(molrec['molecular_charge'])} {molrec['molecular_multiplicity']}"""
+        units_line = f"""UNITS={umap.get(units.lower())}"""
+        last_line = """**END OF DALTON INPUT**"""
+
+        smol = [first_line, second_line, charge_line, units_line]
+        smol.extend(atoms)
+        smol.append(last_line)
+
+        data.fields.extend(["molecular_charge", "molecular_multiplicity"])
+        data.keywords = {
+            "charge": int(molrec["molecular_charge"]),
+            "multiplicity": molrec["molecular_multiplicity"],
+            "units": umap.get(units.lower()),
+        }
 
     elif dtype == "gamess":
         # * GAMESS can't detect or run in symmetry w/o explicit notation
