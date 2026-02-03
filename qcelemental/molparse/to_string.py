@@ -251,24 +251,6 @@ def to_string(
         # TODO handle which units valid
         umap = {"bohr": "au", "angstrom": "angstrom"}
 
-        atoms = _atoms_formatter(molrec, geom, atom_format, ghost_format, width, prec, 2)
-
-        first_line = f"""molecule"""
-        second_line = f"""units {umap.get(units.lower())}"""
-        last_line = """end"""
-        # noautosym nocenter  # no reorienting input geometry
-        smol = [first_line]
-        smol.append(second_line)
-        eprec = molrec.get("eprec", None)
-        if eprec is not None:
-            smol.append(f"eprec {eprec}")
-
-        smol.extend(atoms)
-        smol.append(last_line)
-
-        symbols = molrec["elem"]
-        geometry = geom
-
         class geometry_parameters:
             def __init__(
                 self,
@@ -323,16 +305,38 @@ def to_string(
                     "units": self.units,
                 }
 
+        
         parameters = geometry_parameters(
-            eprec=molrec.get("eprec", None),
+            eprec=molrec.get("eprec", 1e-6),
             field=[0.0, 0.0, 0.0],
-            no_orient=molrec.get("no_orient", None),
+            no_orient=molrec.get("fix_orientation", None),
             psp_calc=molrec.get("psp_calc", False),
             pure_ae=molrec.get("pure_ae", True),
             symtol=molrec.get("symtol", None),
             core_type=molrec.get("core_type", None),
             units=umap.get(units.lower()),
         )
+
+        atoms = _atoms_formatter(molrec, geom, atom_format, ghost_format, width, prec, 2)
+
+        first_line = f"""molecule"""
+        parameter_lines = []
+        for key, value in parameters.to_dict().items():
+            parameter_lines.append(f"{key} {value}")
+        last_line = """end"""
+        # noautosym nocenter  # no reorienting input geometry
+        smol = [first_line]
+        second_line = f"""units {umap.get(units.lower())}"""
+        smol.append(second_line)
+        eprec = molrec.get("eprec", None)
+        if eprec is not None:
+            smol.append(f"eprec {eprec}")
+        smol.extend(parameter_lines)
+        smol.extend(atoms)
+        smol.append(last_line)
+
+        symbols = molrec["elem"]
+        geometry = geom
 
         data.fields.extend(["molecular_charge", "molecular_multiplicity"])
         data.keywords = {
